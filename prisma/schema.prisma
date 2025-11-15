@@ -1,0 +1,93 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Household {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  members   Member[]
+  createdAt DateTime @default(now())
+}
+
+model Member {
+  id              String        @id @default(cuid())
+  name            String
+  colorHex        String
+  emoji           String?
+  householdId     String
+  household       Household     @relation(fields: [householdId], references: [id])
+  currentMood     String?       // stressed, lazy, sick, happy
+  tonightActivity String?       // study, watch_movie, bake
+  isAtGym         Boolean       @default(false)
+  gymTime         DateTime?     // when going to gym
+  isAtLibrary     Boolean       @default(false)
+  libraryTime     DateTime?     // when going to library
+  statuses        Status[]
+  events          Event[]
+  groceries       GroceryTrip[]
+  announcements   Announcement[]
+  createdAt       DateTime      @default(now())
+}
+
+model Status {
+  id         String    @id @default(cuid())
+  memberId   String
+  member     Member    @relation(fields: [memberId], references: [id])
+  label      String
+  category   String
+  forTonight Boolean   @default(false)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  memberId    String
+  member      Member    @relation(fields: [memberId], references: [id])
+  title       String
+  type        String
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  details     String?
+  isHousewide Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model GroceryTrip {
+  id              String           @id @default(cuid())
+  memberId        String
+  member          Member           @relation(fields: [memberId], references: [id])
+  storeName       String
+  leavingAt       DateTime?
+  note            String?
+  takingRequests  Boolean          @default(true)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  requests        GroceryRequest[]
+}
+
+model GroceryRequest {
+  id          String      @id @default(cuid())
+  tripId      String
+  trip        GroceryTrip @relation(fields: [tripId], references: [id])
+  requestedBy String
+  item        String
+  isDone      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id])
+  message   String
+  createdAt DateTime @default(now())
+}

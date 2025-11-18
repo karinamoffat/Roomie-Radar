@@ -7,7 +7,8 @@ import { MemberCard } from "@/components/MemberCard";
 import { GroceryTripCard } from "@/components/GroceryTripCard";
 import { CalendarView } from "@/components/CalendarView";
 import { getLocalMemberId, setLocalMemberId } from "@/lib/member-storage";
-import { Plus } from "lucide-react";
+import { Plus, CheckSquare, DollarSign, Wrench, MessageSquare, UserPlus, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 interface Member {
   id: string;
@@ -49,6 +50,14 @@ export default function HouseDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSetup, setShowSetup] = useState(false);
   const [currentView, setCurrentView] = useState<"dashboard" | "calendar">("dashboard");
+  const [featureData, setFeatureData] = useState({
+    chores: 0,
+    activeChores: 0,
+    expenses: 0,
+    activeMaintenance: 0,
+    activePolls: 0,
+    currentVisitors: 0,
+  });
 
   // Setup form state
   const [setupName, setSetupName] = useState("");
@@ -78,6 +87,7 @@ export default function HouseDashboard() {
         const memberExists = data.members.some((m: Member) => m.id === memberId);
         if (memberExists) {
           setCurrentMemberId(memberId);
+          loadFeatureData(code);
         } else {
           setShowSetup(true);
         }
@@ -116,11 +126,44 @@ export default function HouseDashboard() {
         setCurrentMemberId(member.id);
         setShowSetup(false);
         loadHousehold();
+        loadFeatureData(code);
       }
     } catch (error) {
       console.error("Error creating member:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const loadFeatureData = async (householdCode: string) => {
+    try {
+      const [choresRes, expensesRes, maintenanceRes, pollsRes, visitorsRes] = await Promise.all([
+        fetch(`/api/chores?householdCode=${householdCode}`),
+        fetch(`/api/expenses?householdCode=${householdCode}`),
+        fetch(`/api/maintenance?householdCode=${householdCode}`),
+        fetch(`/api/polls?householdCode=${householdCode}`),
+        fetch(`/api/visitors?householdCode=${householdCode}`),
+      ]);
+
+      const chores = choresRes.ok ? await choresRes.json() : [];
+      const expenses = expensesRes.ok ? await expensesRes.json() : [];
+      const maintenance = maintenanceRes.ok ? await maintenanceRes.json() : [];
+      const polls = pollsRes.ok ? await pollsRes.json() : [];
+      const visitors = visitorsRes.ok ? await visitorsRes.json() : [];
+
+      setFeatureData({
+        chores: chores.length,
+        activeChores: chores.filter((c: any) => c.isActive).length,
+        expenses: expenses.length,
+        activeMaintenance: maintenance.filter((m: any) => m.status !== "resolved").length,
+        activePolls: polls.filter((p: any) => {
+          if (!p.expiresAt) return true;
+          return new Date(p.expiresAt) >= new Date();
+        }).length,
+        currentVisitors: visitors.filter((v: any) => !v.checkOutDate).length,
+      });
+    } catch (error) {
+      console.error("Error loading feature data:", error);
     }
   };
 
@@ -281,6 +324,83 @@ export default function HouseDashboard() {
                 </div>
               </div>
             )}
+
+            {/* Feature Summaries */}
+            <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <Link
+                href={`/house/${code}/chores`}
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckSquare size={18} className="text-blue-600" />
+                  <span className="text-sm font-medium text-slate-700">Chores</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{featureData.activeChores}</div>
+                <div className="text-xs text-slate-500 mt-1">active</div>
+              </Link>
+
+              <Link
+                href={`/house/${code}/expenses`}
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign size={18} className="text-emerald-600" />
+                  <span className="text-sm font-medium text-slate-700">Expenses</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{featureData.expenses}</div>
+                <div className="text-xs text-slate-500 mt-1">total</div>
+              </Link>
+
+              <Link
+                href={`/house/${code}/maintenance`}
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Wrench size={18} className="text-amber-600" />
+                  <span className="text-sm font-medium text-slate-700">Issues</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{featureData.activeMaintenance}</div>
+                <div className="text-xs text-slate-500 mt-1">active</div>
+              </Link>
+
+              <Link
+                href={`/house/${code}/polls`}
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare size={18} className="text-purple-600" />
+                  <span className="text-sm font-medium text-slate-700">Polls</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{featureData.activePolls}</div>
+                <div className="text-xs text-slate-500 mt-1">active</div>
+              </Link>
+
+              <Link
+                href={`/house/${code}/visitors`}
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <UserPlus size={18} className="text-rose-600" />
+                  <span className="text-sm font-medium text-slate-700">Visitors</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-900">{featureData.currentVisitors}</div>
+                <div className="text-xs text-slate-500 mt-1">current</div>
+              </Link>
+
+              <Link
+                href={`/house/${code}/events`}
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Plus size={18} className="text-indigo-600" />
+                  <span className="text-sm font-medium text-slate-700">Events</span>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-slate-600 mt-3">
+                  <span>View</span>
+                  <ArrowRight size={14} />
+                </div>
+              </Link>
+            </div>
 
             {/* Main Layout: Left 1/3 Current User, Right 2/3 Others */}
             <div className="flex flex-col lg:flex-row gap-6">

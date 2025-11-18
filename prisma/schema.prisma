@@ -8,11 +8,16 @@ generator client {
 }
 
 model Household {
-  id        String   @id @default(cuid())
-  name      String
-  code      String   @unique
-  members   Member[]
-  createdAt DateTime @default(now())
+  id               String            @id @default(cuid())
+  name             String
+  code             String            @unique
+  members          Member[]
+  chores           Chore[]
+  expenses         Expense[]
+  maintenanceIssues MaintenanceIssue[]
+  polls            Poll[]
+  visitors         Visitor[]
+  createdAt        DateTime          @default(now())
 }
 
 model Member {
@@ -32,6 +37,14 @@ model Member {
   events          Event[]
   groceries       GroceryTrip[]
   announcements   Announcement[]
+  assignedChores  Chore[]       @relation("ChoreAssignee")
+  createdChores   Chore[]       @relation("ChoreCreator")
+  paidExpenses    Expense[]     @relation("ExpensePayer")
+  expenseSplits   ExpenseSplit[]
+  reportedIssues  MaintenanceIssue[]
+  createdPolls    Poll[]
+  pollResponses   PollResponse[]
+  hostedVisitors  Visitor[]
   createdAt       DateTime      @default(now())
 }
 
@@ -90,4 +103,107 @@ model Announcement {
   member    Member   @relation(fields: [memberId], references: [id])
   message   String
   createdAt DateTime @default(now())
+}
+
+model Chore {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  frequency       String    // daily, weekly, biweekly, monthly
+  householdId     String
+  household       Household @relation(fields: [householdId], references: [id])
+  assignedMemberId String?
+  assignedMember  Member?   @relation("ChoreAssignee", fields: [assignedMemberId], references: [id])
+  createdById     String
+  createdBy       Member    @relation("ChoreCreator", fields: [createdById], references: [id])
+  lastCompletedAt DateTime?
+  nextDueAt       DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Expense {
+  id          String        @id @default(cuid())
+  description String
+  amount      Float
+  category    String?       // groceries, utilities, rent, other
+  date        DateTime      @default(now())
+  householdId String
+  household   Household     @relation(fields: [householdId], references: [id])
+  paidByMemberId String
+  paidBy      Member        @relation("ExpensePayer", fields: [paidByMemberId], references: [id])
+  isSettled   Boolean       @default(false)
+  splits      ExpenseSplit[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ExpenseSplit {
+  id        String   @id @default(cuid())
+  expenseId String
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount    Float
+  isPaid    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model MaintenanceIssue {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  category      String    // plumbing, electrical, appliance, heating, other
+  status        String    @default("reported") // reported, in-progress, resolved
+  priority      String    @default("medium") // low, medium, high
+  householdId   String
+  household     Household @relation(fields: [householdId], references: [id])
+  reportedByMemberId String
+  reportedBy    Member    @relation(fields: [reportedByMemberId], references: [id])
+  reportedAt    DateTime  @default(now())
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Poll {
+  id              String        @id @default(cuid())
+  question        String
+  options         String        // JSON array of options
+  allowMultiple   Boolean       @default(false)
+  expiresAt       DateTime?
+  householdId     String
+  household       Household     @relation(fields: [householdId], references: [id])
+  createdByMemberId String
+  createdBy       Member        @relation(fields: [createdByMemberId], references: [id])
+  responses       PollResponse[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model PollResponse {
+  id              String   @id @default(cuid())
+  pollId          String
+  poll            Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  memberId        String
+  member          Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  selectedOptions String   // JSON array of selected option indices
+  votedAt         DateTime @default(now())
+  
+  @@unique([pollId, memberId])
+}
+
+model Visitor {
+  id          String    @id @default(cuid())
+  visitorName String
+  hostMemberId String
+  host        Member    @relation(fields: [hostMemberId], references: [id])
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  checkInDate DateTime  @default(now())
+  checkOutDate DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

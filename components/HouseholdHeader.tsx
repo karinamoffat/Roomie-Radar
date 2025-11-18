@@ -25,6 +25,11 @@ export function HouseholdHeader({
 
   const tabs = [
     { name: "Dashboard", href: `/house/${householdCode}` },
+    { name: "Chores", href: `/house/${householdCode}/chores` },
+    { name: "Expenses", href: `/house/${householdCode}/expenses` },
+    { name: "Maintenance", href: `/house/${householdCode}/maintenance` },
+    { name: "Polls", href: `/house/${householdCode}/polls` },
+    { name: "Visitors", href: `/house/${householdCode}/visitors` },
     { name: "Events", href: `/house/${householdCode}/events` },
     { name: "Settings", href: `/house/${householdCode}/settings` },
   ];
@@ -48,15 +53,15 @@ export function HouseholdHeader({
           )}
         </div>
 
-        <nav className="flex gap-1">
+        <nav className="flex gap-1 overflow-x-auto pb-2 -mb-2 scrollbar-hide">
           {tabs.map((tab) => {
-            const isActive = pathname === tab.href;
+            const isActive = pathname === tab.href || (tab.href !== `/house/${householdCode}` && pathname?.startsWith(tab.href));
             return (
               <Link
                 key={tab.name}
                 href={tab.href}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                   isActive
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-slate-600 hover:bg-slate-50"

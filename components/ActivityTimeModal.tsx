@@ -53,15 +53,12 @@ export function ActivityTimeModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-        <div className="flex items-center gap-3 mb-6">
-          <Clock className="text-indigo-600" size={24} />
-          <h2 className="text-xl font-semibold text-slate-900">
-            When are you going?
-          </h2>
-        </div>
-
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      title={`When are you going${activityName ? ` to ${activityName}` : ""}?`}
+    >
+      <div className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Time options */}
           <div className="space-y-2">

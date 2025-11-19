@@ -9,7 +9,7 @@ import { getLocalMemberId } from "@/lib/member-storage";
 interface Member {
   id: string;
   name: string;
-  emoji?: string | null;
+  emoji: string | null;
   colorHex: string;
 }
 

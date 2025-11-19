@@ -1,6 +1,6 @@
 # Houseboard - Housemate Management App
 
-A simple, beautiful household web app for coordinating with housemates. Share statuses, events, and grocery shopping trips in real-time.
+A simple household web app for coordinating with housemates. See weekly chores, split expenses, and make plans all in one place.
 
 ## Features
 

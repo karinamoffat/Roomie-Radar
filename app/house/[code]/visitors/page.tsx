@@ -6,18 +6,24 @@ import { HouseholdHeader } from "@/components/HouseholdHeader";
 import { VisitorList } from "@/components/VisitorList";
 import { getLocalMemberId } from "@/lib/member-storage";
 
-interface Member {
+type MemberForVisitorList = {
   id: string;
   name: string;
-  emoji?: string | null;
+  emoji: string | null;
   colorHex: string;
-}
+};
 
 interface Household {
   id: string;
   name: string;
   code: string;
-  members: Member[];
+  members: Array<{
+    id: string;
+    name: string;
+    emoji: string | null;
+    colorHex: string;
+    [key: string]: any; // Allow additional properties from API
+  }>;
 }
 
 export default function VisitorsPage() {
@@ -27,7 +33,7 @@ export default function VisitorsPage() {
 
   const [household, setHousehold] = useState<Household | null>(null);
   const [currentMemberId, setCurrentMemberId] = useState<string | null>(null);
-  const [currentMember, setCurrentMember] = useState<Member | null>(null);
+  const [currentMember, setCurrentMember] = useState<Household["members"][0] | null>(null);
   const [visitors, setVisitors] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,7 +56,7 @@ export default function VisitorsPage() {
       const memberId = getLocalMemberId(code);
       if (memberId) {
         setCurrentMemberId(memberId);
-        const member = householdData.members.find((m: Member) => m.id === memberId);
+        const member = householdData.members.find((m: Household["members"][0]) => m.id === memberId);
         setCurrentMember(member || null);
       }
 
@@ -92,7 +98,7 @@ export default function VisitorsPage() {
           visitors={visitors}
           householdCode={code}
           currentMemberId={currentMemberId}
-          members={household.members}
+          members={household.members as MemberForVisitorList[]}
           onUpdate={loadData}
         />
       </main>

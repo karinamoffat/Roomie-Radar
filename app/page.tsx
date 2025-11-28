@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home as HomeIcon } from "lucide-react";
+import { Home as HomeIcon, Plus } from "lucide-react";
+import { CreateHouseModal } from "@/components/CreateHouseModal";
 
 export default function Home() {
-  const [householdCode, setHouseholdCode] = useState("");
+  const [houseName, setHouseName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const router = useRouter();
 
   const handleJoinHouse = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!householdCode.trim()) {
-      setError("Please enter a household code");
+    if (!houseName.trim()) {
+      setError("Please enter a house name");
       return;
     }
 
@@ -25,7 +27,7 @@ export default function Home() {
       const response = await fetch("/api/households", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: householdCode.trim() }),
+        body: JSON.stringify({ code: houseName.trim() }),
       });
 
       if (!response.ok) {
@@ -33,7 +35,7 @@ export default function Home() {
       }
 
       // Navigate to the household page
-      router.push(`/house/${householdCode.trim()}`);
+      router.push(`/house/${houseName.trim()}`);
     } catch (err) {
       setError("Failed to join household. Please try again.");
       console.error(err);
@@ -50,10 +52,10 @@ export default function Home() {
             <HomeIcon size={32} />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-2">
-            Houseboard
+            Roomie Radar
           </h1>
           <p className="text-slate-600 text-base md:text-lg">
-            Stay connected with your housemates
+            Stay connected with your roommates
           </p>
         </div>
 
@@ -64,17 +66,17 @@ export default function Home() {
                 htmlFor="code"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
-                Household Code
+                House Name
               </label>
-              <input
-                id="code"
-                type="text"
-                value={householdCode}
-                onChange={(e) => setHouseholdCode(e.target.value)}
-                placeholder="Enter your house code"
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-900"
-                disabled={isLoading}
-              />
+                <input
+                  id="name"
+                  type="text"
+                  value={houseName}
+                  onChange={(e) => setHouseName(e.target.value)}
+                  placeholder="Enter your house name"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-900"
+                  disabled={isLoading}
+                />
             </div>
 
             {error && (
@@ -93,15 +95,26 @@ export default function Home() {
           </form>
 
           <div className="mt-6 pt-6 border-t border-slate-100">
-            <p className="text-sm text-slate-600 text-center">
-              Don&apos;t have a code?{" "}
-              <span className="text-indigo-600 font-medium">
-                Just create one above!
-              </span>
+            <p className="text-sm text-slate-600 text-center mb-4">
+              Don&apos;t have a code?
             </p>
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 bg-white border-2 border-indigo-500 text-indigo-600 py-3 px-4 rounded-lg font-medium hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={20} />
+              Create New House
+            </button>
           </div>
         </div>
       </div>
+      
+      <CreateHouseModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }
